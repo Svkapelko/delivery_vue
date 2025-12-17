@@ -1,6 +1,10 @@
 <script setup>
- const emit = defineEmits(['toggleModal']);
- const openModal = () => emit('toggleModal')
+import { defineEmits } from "vue";
+
+const emit = defineEmits(["toggleModal"]); // Определяем доступные события
+const openModal = () => {
+  emit("toggleModal", true); // Передаем true, чтобы показать модальное окно
+};
 </script>
 
 <template>
