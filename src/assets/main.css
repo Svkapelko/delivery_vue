@@ -47,14 +47,12 @@ body {
     outline: none;
     cursor: pointer;
 }
-
 .btn-primary {
     border-radius: 2px;
     background: rgba(24, 144, 255, 1);
     border: 1px solid rgba(24, 144, 255, 1);
     color: rgba(255, 255, 255, 1);
 }   
-
 .btn-outline {
     box-sizing: border-box;
     border: 1px solid rgba(217, 217, 217, 1);
@@ -65,9 +63,7 @@ body {
 
 .banner {
     margin-bottom: 56px;
-
 }
-
 .banner-item {
     background-image: url(./images/banners/banner-img.png);
     background-repeat: no-repeat;
@@ -77,7 +73,6 @@ body {
     border-radius: 10px;
     background-color:rgba(255, 241, 184, 1);
 }
-
 .banner-item--title {
     color: rgba(48, 44, 52, 1);   
     font-size: 39px;
@@ -86,51 +81,12 @@ body {
     margin-top: 0;
     margin-bottom: 15px;
 }
-
 .banner-item--subtitle {
     color: rgba(48, 44, 52, 1);
     font-size: 24px;
     font-weight: 400;
     max-width: 50%;
     margin: 0;
-}
-
-.products-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap; /* чтобы был перенос текста при уменьшении ширины экрана*/
-    gap: 24px;
-}
-
-.products-header--title {
-    color: rgba(0, 0, 0, 1);
-    font-size: 36px;
-    font-weight: 700;
-    margin: 0;
-}
-
-.products-header--search {
-    box-sizing: border-box;
-    border: 1px solid rgba(217, 217, 217, 1);
-    border-radius: 2px;
-    background: rgba(255, 255, 255, 1);
-    min-width: 306px;
-    height: 34px;
-    flex-shrink: 0;
-    padding: 5px 12px;
-}
-
-.products-header--search:focus {
-    outline: none;
-    border: 1px solid rgba(217, 217, 217, 1);
-}
-
-.products-header--search::placeholder {
-    color: rgba(191, 191, 191, 1);
-    font-size: 16px;
-    font-weight: 400;
-    line-height: 24px;
 }
 
 .products-wrapper {
@@ -142,7 +98,6 @@ body {
     margin-top: 44px;
     margin-bottom: 90px;
 }
-
 .products-card {
     width: calc((100% - 48px) /3); /* ширина высчитывается - каждая карточка по ширине 100% контейнера минус отступ 24px, минус еще один отступ 24px, то есть минус48px и разделить на 3, тк у нас три карточки*/ 
     border-radius: 7px;
@@ -156,120 +111,23 @@ body {
 .products-card_image {
     width: 100%; 
 }
-
 .products-card_image img {
-    width: 100%; /* обязательно надо добавить ширину 100% не только аттрибуту products-card_image, но еще и самому тэгу img */
-} /* теперь картинки сжимаются при уменьшении ширину экрана*/
+    width: 100%; /* обязательно надо добавить ширину 100% не только аттрибуту products-card_image, но еще и самому тэгу img, /* теперь картинки сжимаются при уменьшении ширины экрана*/
+} 
 
 .products-card_description {
     padding: 20px 24px 34px 24px; /* верх право низ лево*/
 }
-
 .products-card_description--row {
     display: flex;
     justify-content: space-between;
     align-items: center;
-
 }
-
-.products-card_description--title{
-    color: rgba(0, 0, 0, 1);
-    font-size: 24px;
-    font-weight: 700;
-    line-height: 32px;
-    margin: 0; /* убираем лишние отступы */
-}
-
-.products-card_description--badge {
-    color:rgba(255, 255, 255, 1);
-    font-size: 12px;
-    font-weight: 400;
-    line-height: 20px;
-    border-radius: 2px;
-    background:rgba(38, 38, 38, 1);
-    padding: 1px 8px;
-}
-
-.products-card_description--info {
-    display: flex;
-    justify-content: flex-start; 
-    align-items: center;
-    flex-wrap: wrap; /* перенос строки */
-    row-gap: 8px;
-    column-gap: 25px;
-}
-
 .products-card_description--row:not(:last-child ){
     margin-bottom: 10px;
 }
 
-.products-card_description--rating {
-    color: rgba(255, 193, 7, 1);
-    font-size: 18px;
-    font-weight: 700;
-    line-height: 32px;
-}
-
-.products-card_description--price {
-    color:rgba(140, 140, 140, 1);
-    font-size: 18px;
-    font-weight: 400;
-    line-height: 32px;
-}
-
-.products-card_description--group {
-    color:rgba(140, 140, 140, 1);
-    font-size: 18px;
-    font-weight: 400;
-    line-height: 32px;
-    position: relative;
-}
-
-.products-card_description--group::before{
-    content: ''; /* точку задаем через псевдокласс*/
-    display: block;
-    width: 5px;
-    height: 5px;
-    border-radius: 50%;
-    background-color: rgba(140, 140, 140, 1);
-    position: absolute;
-    top: 14px;
-    left: -14px;
-}
-
-.products-card_description--name {
-    color: rgba(0, 0, 0, 1);
-    font-size: 24px;
-    font-weight: 400;
-    line-height: 32px;
-    margin: 0;
-}
-
-.products-card_description--text {
-    color:rgba(140, 140, 140, 1);
-    font-size: 18px;
-    font-weight: 400;
-    line-height: 21px;
-    margin: 0;
-}
-.products-card_description-controls {
-    display: flex;
-    justify-content: flex-start;
-    align-items: center;
-    flex-wrap: wrap;
-    row-gap: 10px;
-    column-gap: 30px;
-}
-
-.products-card_description-controls--price {
-    color: rgba(0, 0, 0, 1);
-    font-size: 20px;
-    font-weight: 700;
-    line-height: 32px;
-}
-
-
-/* медиа-запросы внизу */
+/* медиа-запросы внизу */ 
 @media (max-width: 991px){ /* при изменении ширины экрана до 991px меняем ширину текста - растягиваем по всему баннеру*/
     .banner-item {
         background-image: none;
