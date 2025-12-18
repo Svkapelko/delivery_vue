@@ -1,51 +1,16 @@
 <script setup>
-const goodsArray = [
-  {
-    id: 0,
-    title: "Ролл угорь стандарт",
-    info: "Рис, угорь, соус унаги, кунжут, водоросли нори.",
-    price: 250,
-    img: "prd1.jpg",
-  },
-  {
-    id: 1,
-    title: "Калифорния лосось стандарт",
-    info: "Рис, лосось, авокадо, огурец, майонез, икра масаго, водоросли нори.",
-    price: 395,
-    img: "prd2.jpg",
-  },
-  {
-    id: 2,
-    title: "Окинава стандарт",
-    info: "Рис, креветка отварная, сыр сливочный, лосось, огурец свежий.",
-    price: 340,
-    img: "prd3.jpg",
-  },
-  {
-    id: 3,
-    title: "Цезарь маки хl",
-    info: "Рис, куриная грудка копченая, икра масаго, томат, айсберг, соус цезарь...",
-    price: 465,
-    img: "prd4.jpg",
-  },
-  {
-    id: 4,
-    title: "Ясай маки стандарт 185 г",
-    info: "Рис, помидор свежий, перец болгарский, авокадо, огурец, айсберг.",
-    price: 290,
-    img: "prd5.jpg",
-  },
-  {
-    id: 5,
-    title: "Ролл с креветкой стандарт",
-    info: "Рис, водоросли нори, креветки отварные, сыр сливочный, огурцы.",
-    price: 380,
-    img: "prd6.jpg",
-  },
-];
+import { useProductsStore} from "@/store/products"
+import { useCartStore } from '@/store/cart';
+
+const productsStore = useProductsStore();
+const cartStore = useCartStore();
 
 const getUrl = (name) => {
   return new URL(`../src/assets/images/goods/${name}`, import.meta.url);
+};
+
+const addItemToCart = (product) => {
+  cartStore.addToCart(product)
 };
 </script>
 
@@ -54,24 +19,24 @@ const getUrl = (name) => {
     <section class="products">
       <div class="container">
         <div class="products-wrapper" id="goods-container">
-          <div v-for="item in goodsArray" :key="item.id" class="products-card">
+          <div v-for="product in productsStore.products" :key="product.id" class="products-card">
             <div class="products-card_image">
-              <img :src="getUrl(item.img)" alt="изображение продукта" />
+              <img :src="getUrl(product.img)" alt="product.title" />
             </div>
             <div class="products-card_description">
               <div class="products-card_description--row">
                 <h5 class="products-card_description--name">
-                  {{ item.title }}
+                  {{ product.title }}
                 </h5>
               </div>
               <div class="products-card_description--row">
                 <p class="products-card_description--text">
-                  {{ item.info }}
+                  {{ product.info }}
                 </p>
               </div>
               <div class="products-card_description--row">
                 <div class="products-card_description-controls">
-                  <button class="btn btn-primary">
+                  <button class="btn btn-primary" @click="addItemToCart(product)">
                     В корзину
                     <img
                       src="../src/assets/images/icons/cart.svg"
@@ -79,7 +44,7 @@ const getUrl = (name) => {
                     />
                   </button>
                   <span class="products-card_description-controls--price">
-                    {{ item.price }} ₽
+                    {{ product.price }} ₽
                   </span>
                 </div>
               </div>
