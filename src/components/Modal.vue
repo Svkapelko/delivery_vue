@@ -1,6 +1,9 @@
+<!-- компонент Modal.vue -->
 <script setup>
 import { useCartStore } from "@/store/cart";
-import { ref, computed } from "vue";
+import { computed } from "vue";
+import { ref, onUnmounted, watch } from "vue";
+
 const cartStore = useCartStore();
 
 // Пропы для передачи статуса модального окна
@@ -14,31 +17,78 @@ const emit = defineEmits(["toggleModal"]);
 // Метод закрытия модального окна
 const closeModal = () => emit("toggleModal");
 
-// Увеличение количества товара
-const increaseQuantity = (item) => {
-  item.quantity ++;
-};
-// Уменьшение количества товаров
-const decreaseQuantity = (item) => {
-  if (item.quantity > 1) {
-    item.quantity --;
-  } else {  // Полностью удаляем товар из корзины
-    cartStore.items.splice(cartStore.items.indexOf(item), 1);
-  }
-};
-
-// Сумма всех товаров в корзине
-const totalPrice = computed(() => {
-  return cartStore.items.reduce(
-    (sum, item) => sum + item.product.price * item.quantity, 
-    0
-    );
-});
 // Метод очистки корзины и закрытия модального окна
 const cancelAndClearCart = () => {
     cartStore.clearCart();  // Очищаем корзину
     closeModal(); // Закрываем модальное окно
 }
+
+
+// Ссылка на DOM-элемент окна
+const modalRef = ref(null) /* Позволяет Vue получить прямой доступ к HTML-элементу, чтобы узнать его начальные координаты (offsetLeft/Top)*/
+const isDragging = ref(false);
+const hasBeenDragged = ref(false);
+
+// Состояние перетаскивания
+const position = ref({ x: 0, y: 0});  // Текущие координаты
+const offset = ref({ x: 0, y: 0}); // Смещение относительно курсора
+
+// 1. Сброс позиции при открытии, чтобы окно не "терялось"
+watch(() => props.isOpen, (val) => {
+  if (val) {
+    hasBeenDragged.value = false; // Возвращаем в центр при новом открытии
+  }
+})
+
+const startDrag = (event) => {
+  // Если нажали на кнопку закрытия или любой интерактивный элемент - не тащим
+  if (event.target.closest('.cart-modal__header--close')) {
+    return;
+  }
+    // 1. Сначала вычисляем текущее положение окна на экране
+    const rect = modalRef.value.getBoundingClientRect();
+    // 2. Устанавливаем координаты position в те, где оно стоит сейчас, xто предотвратит прыжок при переключении в fixed
+    position.value = {
+      x: rect.left,
+      y: rect.top
+    };
+     // 3. Вычисляем смещение курсора относительно левого верхнего угла окна, event.clientX / clientY: это текущие координаты курсора на экране
+    offset.value = { 
+      x: event.clientX - rect.left,
+      y: event.clientY - rect.top,
+    };
+    // 4. Только ТЕПЕРЬ разрешаем переключение в fixed и движение
+    isDragging.value = true;
+    hasBeenDragged.value = true;
+
+    // Добавляем глобальные слушатели на всё окно, чтобы не "потерять" модалку при быстром движении
+    window.addEventListener("mousemove", onDrag);
+    window.addEventListener("mouseup", stopDrag);
+  }  
+
+
+const onDrag = (event) => {
+  if (!isDragging.value) return;
+
+
+  // Рассчитываем новые координаты относительно вьюпорта для fixed позиционирования
+  position.value = {
+    x: event.clientX - offset.value.x,
+    y: event.clientY - offset.value.y
+  };
+};
+
+const stopDrag = () => {
+  isDragging.value = false;
+  window.removeEventListener("mousemove", onDrag);
+  window.removeEventListener("mouseup", stopDrag);
+}
+
+// Важно добавить очистку при удалении компонента
+onUnmounted(() => {
+  stopDrag();
+});
+
 </script>
 
 <template>
@@ -47,13 +97,32 @@ const cancelAndClearCart = () => {
     @click.self="closeModal()"
     class="cart-modal__overlay"
   >
-    <div class="cart-modal">
-      <div class="cart-modal__header">
-        <h2 class="cart-modal__header--title">Корзина</h2>
-        <span class="cart-modal__header--close" @click="closeModal()">
+    <div 
+      ref = "modalRef"    
+      class="cart-modal"
+      :style="hasBeenDragged ? {
+        position: 'fixed',
+        left: position.x + 'px',
+        top: position.y + 'px',
+        margin: 0 // Сбрасываем центрирование после начала движения
+      } : {} "
+      >
+       <!-- Шапка окна — за неё будем таскать -->
+      <div class="cart-modal__header" @mousedown="startDrag" title="Зажмите, чтобы переместить">
+        <slot name="header">
+          <h2 class="cart-modal__header--title">Корзина</h2>
+        </slot>
+        
+        <span class="cart-modal__header--close" @click.stop="closeModal()">
           <img src="../assets/images/icons/close.svg" alt="close" />
         </span>
       </div>
+
+      <!-- Блок для отображения сообщений -->
+      <div v-if="cartStore.showMessage" class="cart-modal__message">
+        {{ cartStore.messageText }}
+      </div>
+
       <div class="cart-modal__body">
         <div v-if="cartStore.items.length > 0">
           <div
@@ -64,15 +133,18 @@ const cancelAndClearCart = () => {
             <p class="cart-item--title">{{ item.product.title }}</p>
             <div class="cart-item__controls">
               <div class="cart-item__controls--price">
-                {{ item.product.price }} ₽
+                {{ item.product.price * item.quantity }} ₽ <!-- Индивидуальная стоимость товара -->
               </div>
-              <button class="btn btn-outline" @click="increaseQuantity(item)">
-                +
-              </button>
-              <div class="cart-item__controls--count">{{ item.quantity }}</div>
-              <button class="btn btn-outline" @click="decreaseQuantity(item)">
+              <button class="btn btn-outline" @click="cartStore.decreaseQuantity(item.product)">
                 -
               </button>
+              <div class="cart-item__controls--count">{{ item.quantity }}</div>
+              <button class="btn btn-outline" @click="cartStore.increaseQuantity(item.product)">
+                +
+              </button>
+              <div @click="cartStore.removeFromCart(item.product)" class="remove-icon"> 
+                <img src="../assets/images/icons/trash.png" alt="trash">
+              </div>
             </div>
           </div>
         </div>
@@ -81,10 +153,10 @@ const cancelAndClearCart = () => {
         </div>
       </div>
       <div class="cart-modal__footer">
-        <div class="cart-modal__footer--price">{{ totalPrice}} ₽</div>
+        <div class="cart-modal__footer--price">{{ cartStore.totalPrice }} ₽</div>
         <div class="cart-modal__footer--controls">
           <button class="btn btn-primary">Оформить заказ</button>
-          <button class="btn btn-outline" @click="cancelAndClearCart()">Отмена</button>
+          <button class="btn btn-outline" @click="cancelAndClearCart()">Очистить корзину</button>
         </div>
       </div>
     </div>
@@ -95,17 +167,20 @@ const cancelAndClearCart = () => {
 .cart-modal__overlay {
   display: none;
   position: fixed;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  left: 0;
+  top: 0; left: 0; width: 100%; height: 100%;
   background: rgba(0, 0, 0, 0.4);
   justify-content: center;
   align-items: center;
+  z-index: 1000;
 }
 
 .cart-modal__overlay.open {
   display: flex; /* появится на странице если у него будет класс open */
+}
+
+/* НОВОЕ: Если окно начали перетаскивать, отключаем центрирование у оверлея */
+.cart-modal__overlay.has-dragged {
+  display: block; /* Убираем flex, чтобы left/top работали корректно */
 }
 
 .cart-modal {
@@ -114,6 +189,9 @@ const cancelAndClearCart = () => {
   padding: 40px 45px;
   border-radius: 5px;
   background: rgba(255, 255, 255, 1);
+  /* ВАЖНО: Добавляем box-sizing, чтобы паддинги не ломали расчеты */
+  box-sizing: border-box; 
+  position: relative;
 }
 
 .cart-modal__header {
@@ -121,6 +199,24 @@ const cancelAndClearCart = () => {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 48px;
+  cursor: grab; /* Рука для перетаскивания */
+  user-select: none; /* Чтобы текст не выделялся при движении */
+  position: relative;
+}
+
+.cart-modal__header:active {
+  cursor: grabbing; /* Кулачок при захвате */
+}
+.cart-modal__header::before {
+  content: '';
+  position: absolute;
+  top: 4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 4px;
+  background: #e8e8e8;
+  border-radius: 10px;
 }
 
 .cart-modal__header--title {
@@ -131,8 +227,19 @@ const cancelAndClearCart = () => {
   margin: 0;
 }
 
+/* Убедимся, что иконка закрытия всегда сверху и кликабельна */
 .cart-modal__header--close {
+  position: relative;
+  z-index: 10; /* Кнопка должна быть выше области перетаскивания */
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5px;
+  transition: transform 0.2s;
+}
+.cart-modal__header--close:hover {
+  transform: scale(1.1);
 }
 
 .cart-modal__footer {
@@ -206,5 +313,17 @@ const cancelAndClearCart = () => {
   border-radius: 2px;
   background: rgba(255, 255, 255, 1);
   color: rgba(64, 169, 255, 1);
+}
+.remove-icon {
+  margin-left: 15px;
+  cursor: pointer;
+  flex-shrink: 0; /* Запрещаем иконке мусора сжиматься */
+}
+.remove-icon img {
+  width: 100%;     /* Пытается занять всё место */
+  max-width: 24px;   /* Но не больше этого */
+  min-width: 18px;   /* И НИКОГДА не меньше этого */
+  height: auto;      /* Сохраняет пропорции */
+  min-height: 20px;  /* Минимальная высота */
 }
 </style>

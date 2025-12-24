@@ -1,6 +1,8 @@
 <script setup>
-import { useProductsStore} from "@/store/products"
-import { useCartStore } from '@/store/cart';
+import MiniModal from "@/components/MiniModal.vue";
+import { useProductsStore } from "@/store/products";
+import { useCartStore } from "@/store/cart";
+import { ref } from "vue";
 
 const productsStore = useProductsStore();
 const cartStore = useCartStore();
@@ -9,9 +11,18 @@ const getUrl = (name) => {
   return new URL(`../src/assets/images/goods/${name}`, import.meta.url);
 };
 
+// Активный товар (для удобства работы с конкретным элементом, теперь будет обновляться при клике)
+const activeProduct = ref({}); // Инициализируем пустым объектом
+
 const addItemToCart = (product) => {
-  cartStore.addToCart(product)
+  // 1. Устанавливаем активный продукт
+  activeProduct.value = product;
+  // 2. Добавляем в корзину через Store
+  cartStore.addToCart(product);
+  console.log("Текущий активный товар:", activeProduct.value.title);
 };
+
+
 </script>
 
 <template>
@@ -19,7 +30,11 @@ const addItemToCart = (product) => {
     <section class="products">
       <div class="container">
         <div class="products-wrapper" id="goods-container">
-          <div v-for="product in productsStore.products" :key="product.id" class="products-card">
+          <div
+            v-for="product in productsStore.products"
+            :key="product.id"
+            class="products-card"
+          >
             <div class="products-card_image">
               <img :src="getUrl(product.img)" alt="product.title" />
             </div>
@@ -36,13 +51,26 @@ const addItemToCart = (product) => {
               </div>
               <div class="products-card_description--row">
                 <div class="products-card_description-controls">
-                  <button class="btn btn-primary" @click="addItemToCart(product)">
+                  <!-- Если товара нет в корзине — показываем кнопку -->
+                  <button
+                    v-if="!cartStore.isInCart(product)"
+                    @click="addItemToCart(product)"
+                    class="btn btn-primary"
+                  >
                     В корзину
                     <img
                       src="../src/assets/images/icons/cart.svg"
                       alt="shopping-cart"
                     />
+                    <!-- Нажали «В корзину»: Вызвался addItemToCart, в объекте showPanel ключ товара стал true. Кнопка исчезла (v-if), появился MiniModal. Нажали «-» в MiniModal: Вызвался handleDecrease. Если количество стало 0, сработал emit('close-panel').Сработал ClosePanel: В Product.vue функция closePanel установила showPanel[product.id] = false.Результат: MiniModal мгновенно исчез, а кнопка «В корзину» снова появилась. -->
                   </button>
+
+                  <!-- MiniModal виден только если товар ЕСТЬ в корзине -->
+                  <MiniModal
+                    v-else                 
+                    :active-product="product"       
+                  />
+
                   <span class="products-card_description-controls--price">
                     {{ product.price }} ₽
                   </span>
@@ -57,6 +85,9 @@ const addItemToCart = (product) => {
 </template>
 
 <style scoped>
+.products-card {
+  position: relative;
+}
 .products-card_description--name {
   color: rgba(0, 0, 0, 1);
   font-size: 24px;
