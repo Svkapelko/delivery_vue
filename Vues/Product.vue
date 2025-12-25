@@ -1,4 +1,5 @@
 <script setup>
+import ProductDetailModal from "@/components/ProductDetailModal.vue";
 import MiniModal from "@/components/MiniModal.vue";
 import { useProductsStore } from "@/store/products";
 import { useCartStore } from "@/store/cart";
@@ -7,12 +8,20 @@ import { ref } from "vue";
 const productsStore = useProductsStore();
 const cartStore = useCartStore();
 
+// Флаг открытия (локальный)
+const isDetailOpen = ref(false);
+
+// Активный товар (для удобства работы с конкретным элементом, теперь будет обновляться при клике)
+const activeProduct = ref(null); // 
+
+const openDetail = (product) => {
+  activeProduct.value = product; // Записываем данные выбранного товара
+  isDetailOpen.value = true;  // Открываем флаг
+}
+
 const getUrl = (name) => {
   return new URL(`../src/assets/images/goods/${name}`, import.meta.url);
 };
-
-// Активный товар (для удобства работы с конкретным элементом, теперь будет обновляться при клике)
-const activeProduct = ref({}); // Инициализируем пустым объектом
 
 const addItemToCart = (product) => {
   // 1. Устанавливаем активный продукт
@@ -21,7 +30,6 @@ const addItemToCart = (product) => {
   cartStore.addToCart(product);
   console.log("Текущий активный товар:", activeProduct.value.title);
 };
-
 
 </script>
 
@@ -34,6 +42,7 @@ const addItemToCart = (product) => {
             v-for="product in productsStore.products"
             :key="product.id"
             class="products-card"
+            @click="openDetail(product)"
           >
             <div class="products-card_image">
               <img :src="getUrl(product.img)" alt="product.title" />
@@ -54,21 +63,20 @@ const addItemToCart = (product) => {
                   <!-- Если товара нет в корзине — показываем кнопку -->
                   <button
                     v-if="!cartStore.isInCart(product)"
-                    @click="addItemToCart(product)"
+                    @click.stop="cartStore.addToCart(product)" 
                     class="btn btn-primary"
-                  >
+                  > <!-- Важно: на кнопках корзины используем @click.stop, чтобы при нажатии на "В корзину" не открывалось окно деталей -->
                     В корзину
                     <img
                       src="../src/assets/images/icons/cart.svg"
                       alt="shopping-cart"
                     />
-                    <!-- Нажали «В корзину»: Вызвался addItemToCart, в объекте showPanel ключ товара стал true. Кнопка исчезла (v-if), появился MiniModal. Нажали «-» в MiniModal: Вызвался handleDecrease. Если количество стало 0, сработал emit('close-panel').Сработал ClosePanel: В Product.vue функция closePanel установила showPanel[product.id] = false.Результат: MiniModal мгновенно исчез, а кнопка «В корзину» снова появилась. -->
+                
                   </button>
 
                   <!-- MiniModal виден только если товар ЕСТЬ в корзине -->
                   <MiniModal
-                    v-else                 
-                    :active-product="product"       
+                    v-else :active-product="product"       
                   />
 
                   <span class="products-card_description-controls--price">
@@ -79,6 +87,12 @@ const addItemToCart = (product) => {
             </div>
           </div>
         </div>
+        <!-- Модальное окно деталей -->
+        <ProductDetailModal
+          :is-detail-open="isDetailOpen"
+          :product="activeProduct"
+          @close="isDetailOpen = false"
+        />
       </div>
     </section>
   </main>

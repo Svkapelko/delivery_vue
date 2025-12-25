@@ -1,80 +1,48 @@
 // stores/app-store.js
+
+/*app-store.js — это «пульт управления» всем приложением. В нем хранится глобальное состояние интерфейса (UI State), от не привязано к конкретным товарам или корзине, но нужно разным частям сайта одновременно. В нем хранятся: 
+
+1. Глобальные флаги видимости,
+Только те окна, кт открываются из разных (не связанных) компонентов): 
+isCartOpen — так как корзину открывают и из Хедера, и из карточки товара, и из плавающей кнопки.
+isMenuOpen — если у вас есть мобильное боковое меню (бургер-меню).
+isAuthOpen — окно входа/регистрации (может всплыть в любой момент). 
+
+2. Состояние загрузки и ошибки
+Глобальные индикаторы, которые показывают пользователю, что что-то происходит:
+isLoading — если этот флаг true, по центру экрана крутится лоадер (пока грузятся рестораны или отправляется заказ).
+globalError — текст ошибки (например, «Проблемы с интернетом»), который выводится в специальной плашке сверху.
+
+3. Пользовательские настройки (Preferences)
+Данные, которые влияют на весь интерфейс сразу:
+theme — (light/dark) если вы делаете темную тему.
+language — если сайт будет на разных языках.
+city — выбранный город доставки (влияет на список доступных ресторанов).
+
+*/
+
 import { defineStore } from 'pinia';
 
 export const useAppStore = defineStore('app', {
   state: () => ({
-    isOpen: false,
-    restaurants: [
-      {
-        id: 0,
-        title: "Пицца плюс",
-        time: 50,
-        rating: 4.5,
-        price: 900,
-        type: "Пицца",
-        img: "rest1.jpg",
-      },
-      {
-        id: 1,
-        title: "Тануки",
-        time: 45,
-        rating: 4.6,
-        price: 850,
-        type: "Суши",
-        img: "rest2.jpg",
-      },
-      {
-        id: 2,
-        title: "FoodBand",
-        time: 30,
-        rating: 4.8,
-        price: 1000,
-        type: "Европейская еда",
-        img: "rest3.jpg",
-      },
-      {
-        id: 3,
-        title: "Жадина-пицца",
-        time: 45,
-        rating: 4.7,
-        price: 750,
-        type: "Пицца",
-        img: "rest4.jpg",
-      },
-      {
-        id: 4,
-        title: "Точка еды",
-        time: 35,
-        rating: 4.7,
-        price: 500,
-        type: "Европейская еда",
-        img: "rest5.jpg",
-      },
-      {
-        id: 5,
-        title: "PizzaBurger",
-        time: 50,
-        rating: 4.9,
-        price: 600,
-        type: "Пицца, бургер",
-        img: "rest6.jpg",
-      },
-    ],     
+    // Состояние окон
+    isAuthOpen: false,
+    
+    // Глобальный статус
+    isLoading: false,
+    errorMessage: null,
+    
+    // Настройки пользователя
+    selectedCity: 'Москва'
   }),
 
   actions: {
-    toggleModal(value) { /* метод переключает переменную, принимает value и меняет состояние на то, кт мы ему передадим */
-    this.isOpen = value /* обращаемся через контекст вызова this */
-  },
-
-    updateRestaurants(updatedRestaurants) {
-      this.restaurants = updatedRestaurants;
-    },
+    setLoading(status) { this.isLoading = status },
+    setCity(city) { this.selectedCity = city },  
   },
 
   getters: {
-    filteredByType: (state) => (type) =>
-      state.restaurants.filter((r) => r.type === type),
+    
   },
 });
 

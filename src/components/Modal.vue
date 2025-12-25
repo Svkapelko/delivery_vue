@@ -1,27 +1,21 @@
 <!-- компонент Modal.vue -->
 <script setup>
 import { useCartStore } from "@/store/cart";
-import { computed } from "vue";
 import { ref, onUnmounted, watch } from "vue";
 
 const cartStore = useCartStore();
 
-// Пропы для передачи статуса модального окна
-const props = defineProps({
-  isOpen: Boolean,
-});
-
-// Эмиттер для отправки события закрытия модального окна
-const emit = defineEmits(["toggleModal"]);
-
-// Метод закрытия модального окна
-const closeModal = () => emit("toggleModal");
-
-// Метод очистки корзины и закрытия модального окна
+// cancelAndClearCart
 const cancelAndClearCart = () => {
-    cartStore.clearCart();  // Очищаем корзину
-    closeModal(); // Закрываем модальное окно
-}
+   // Вызываем стандартное окно подтверждения
+   const confirmed = confirm("Вы уверены, что хотите полностью очистить корзину?");
+   if (confirmed) {
+    cartStore.clearCart(); // Очищаем корзину, если нажато "ОК"
+    setTimeout(()=> {
+      cartStore.toggleCart(false); // Закрываем модальное окно
+    }, 2000);
+  }
+};
 
 
 // Ссылка на DOM-элемент окна
@@ -34,7 +28,7 @@ const position = ref({ x: 0, y: 0});  // Текущие координаты
 const offset = ref({ x: 0, y: 0}); // Смещение относительно курсора
 
 // 1. Сброс позиции при открытии, чтобы окно не "терялось"
-watch(() => props.isOpen, (val) => {
+watch(() => cartStore.isCartOpen, (val) => {
   if (val) {
     hasBeenDragged.value = false; // Возвращаем в центр при новом открытии
   }
@@ -42,9 +36,11 @@ watch(() => props.isOpen, (val) => {
 
 const startDrag = (event) => {
   // Если нажали на кнопку закрытия или любой интерактивный элемент - не тащим
-  if (event.target.closest('.cart-modal__header--close')) {
-    return;
-  }
+  if (event.target.closest('.cart-modal__header--close')) return;
+
+  // Проверка на наличие элемента перед использованием
+  if (!modalRef.value) return;
+  
     // 1. Сначала вычисляем текущее положение окна на экране
     const rect = modalRef.value.getBoundingClientRect();
     // 2. Устанавливаем координаты position в те, где оно стоит сейчас, xто предотвратит прыжок при переключении в fixed
@@ -70,7 +66,6 @@ const startDrag = (event) => {
 const onDrag = (event) => {
   if (!isDragging.value) return;
 
-
   // Рассчитываем новые координаты относительно вьюпорта для fixed позиционирования
   position.value = {
     x: event.clientX - offset.value.x,
@@ -93,8 +88,8 @@ onUnmounted(() => {
 
 <template>
   <div
-    :class="{ open: isOpen }"
-    @click.self="closeModal()"
+    :class="{ open: cartStore.isCartOpen }"
+    @click.self="cartStore.toggleCart(false)"
     class="cart-modal__overlay"
   >
     <div 
@@ -108,12 +103,16 @@ onUnmounted(() => {
       } : {} "
       >
        <!-- Шапка окна — за неё будем таскать -->
-      <div class="cart-modal__header" @mousedown="startDrag" title="Зажмите, чтобы переместить">
+      <div 
+        class="cart-modal__header" 
+        @mousedown="startDrag" 
+        title="Зажмите, чтобы переместить"
+      >
         <slot name="header">
           <h2 class="cart-modal__header--title">Корзина</h2>
         </slot>
         
-        <span class="cart-modal__header--close" @click.stop="closeModal()">
+        <span class="cart-modal__header--close" @click.stop="cartStore.toggleCart(false)">
           <img src="../assets/images/icons/close.svg" alt="close" />
         </span>
       </div>
@@ -156,7 +155,7 @@ onUnmounted(() => {
         <div class="cart-modal__footer--price">{{ cartStore.totalPrice }} ₽</div>
         <div class="cart-modal__footer--controls">
           <button class="btn btn-primary">Оформить заказ</button>
-          <button class="btn btn-outline" @click="cancelAndClearCart()">Очистить корзину</button>
+          <button class="btn btn-outline" @click="cancelAndClearCart">Очистить корзину</button>
         </div>
       </div>
     </div>

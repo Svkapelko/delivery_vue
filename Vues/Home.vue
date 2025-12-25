@@ -1,10 +1,12 @@
 <script setup>
 import { useAppStore } from "../src/store/app-store";
+import { useRestStore } from "@/store/rests";
 
 const appStore = useAppStore();
+const restStore = useRestStore();
 
 // Получаем массив ресторанов
-const restaurants = appStore.restaurants;
+const rests = restStore.rests;
 
 const getUrl = (name) => {
   return new URL(`../src/assets/images/rests/${name}`, import.meta.url);
@@ -46,7 +48,7 @@ const getUrl = (name) => {
         </div>
         <div class="products-wrapper" id="rests-container">
           <router-link
-            v-for="rest in restaurants"
+            v-for="rest in rests"
             :key="rest.id"
             :to="`/rest?id=${rest.id}`"
             class="products-card"

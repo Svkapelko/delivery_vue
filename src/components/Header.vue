@@ -1,9 +1,12 @@
 <script setup>
 import { defineEmits } from "vue";
+import { useCartStore } from "@/store/cart";
 
-const emit = defineEmits(["toggleModal"]); // Определяем доступные события
+const cartStore = useCartStore();
+
+const emit = defineEmits(["toggleCart"]); // Определяем доступные события
 const openModal = () => {
-  emit("toggleModal", true); // Передаем true, чтобы показать модальное окно
+  emit("toggleCart", true); // Передаем true, чтобы показать модальное окно
 };
 </script>
 
@@ -19,7 +22,7 @@ const openModal = () => {
             <img src="../assets/images/icons/user.png" alt="user" />
             Войти
           </button>
-          <button class="btn btn-outline" @click="openModal()">
+          <button class="btn btn-outline" @click="cartStore.toggleCart(true)">
             <img src="../assets/images/icons/shopping-cart.png" alt="cart" />
             Корзина
           </button>
