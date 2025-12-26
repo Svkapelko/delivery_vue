@@ -23,14 +23,14 @@ const currentQuantity = computed(() => cartStore.getItemQuantity(props.activePro
     <div class="cart-item__controls--quantity">
       <button
         class="btn btn-outline btn-cart-modal-mini"
-        @click="cartStore.decreaseQuantity(props.activeProduct)"
+        @click.stop="cartStore.decreaseQuantity(props.activeProduct)"
       >
        -
       </button>   
       <span class="cart-item__controls--count">{{ currentQuantity }}</span>
       <button
         class="btn btn-outline btn-cart-modal-mini"
-        @click="cartStore.increaseQuantity(props.activeProduct)"
+        @click.stop="cartStore.increaseQuantity(props.activeProduct)"
       >
         +
       </button>     

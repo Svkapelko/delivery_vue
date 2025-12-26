@@ -54,9 +54,9 @@ const addItemToCart = (product) => {
                 </h5>
               </div>
               <div class="products-card_description--row">
-                <p class="products-card_description--text">
+             <!--   <p class="products-card_description--text">
                   {{ product.info }}
-                </p>
+                </p> -->
               </div>
               <div class="products-card_description--row">
                 <div class="products-card_description-controls">
@@ -102,6 +102,7 @@ const addItemToCart = (product) => {
 .products-card {
   position: relative;
 }
+
 .products-card_description--name {
   color: rgba(0, 0, 0, 1);
   font-size: 24px;

@@ -118,6 +118,7 @@ body {
 .products-card_description {
     padding: 20px 24px 34px 24px; /* верх право низ лево*/
 }
+
 .products-card_description--row {
     display: flex;
     justify-content: space-between;
