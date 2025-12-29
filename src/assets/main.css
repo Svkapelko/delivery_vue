@@ -53,12 +53,17 @@ body {
     border: 1px solid rgba(24, 144, 255, 1);
     color: rgba(255, 255, 255, 1);
 }   
+.btn-primary:hover {
+    background: #40a9ff;
+}
+
 .btn-outline {
     box-sizing: border-box;
     border: 1px solid rgba(217, 217, 217, 1);
     border-radius: 2px;
     background: rgba(255, 255, 255, 1);
     color: rgba(89, 89, 89, 1);
+    outline: none;
 }
 
 .banner {
@@ -125,6 +130,12 @@ body {
     align-items: center;
      margin-bottom: 10px;
 }
+
+.close-btn {
+  position: absolute; top: 15px; right: 15px;
+  background: none; border: none; font-size: 24px; cursor: pointer;
+}
+
 /*.products-card_description--row:not(:last-child ){
     margin-bottom: 10px;
 }*/

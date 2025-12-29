@@ -1,9 +1,13 @@
 <!-- компонент Modal.vue -->
 <script setup>
 import { useCartStore } from "@/store/cart";
+import { useAppStore } from "@/store/app-store";
 import { ref, onUnmounted, watch } from "vue";
+import AuthModal from "./AuthModal.vue";
+
 
 const cartStore = useCartStore();
+const appStore = useAppStore();
 
 // cancelAndClearCart
 const cancelAndClearCart = () => {
@@ -16,6 +20,14 @@ const cancelAndClearCart = () => {
     }, 2000);
   }
 };
+
+const handleCheckout = () => {
+  // 1. Проверяем, пуста ли корзина
+  if (cartStore.isCartEmpty) return; 
+  // 2. Здесь в будущем будет проверка из authStore.isLoggedIn
+  // А пока просто вызываем окно авторизации
+  appStore.toggleAuthModal(true);
+}
 
 
 // Ссылка на DOM-элемент окна
@@ -154,7 +166,7 @@ onUnmounted(() => {
       <div class="cart-modal__footer">
         <div class="cart-modal__footer--price">{{ cartStore.totalPrice }} ₽</div>
         <div class="cart-modal__footer--controls">
-          <button class="btn btn-primary">Оформить заказ</button>
+          <button @click.stop="handleCheckout" class="btn btn-primary">Оформить заказ</button>
           <button class="btn btn-outline" @click="cancelAndClearCart">Очистить корзину</button>
         </div>
       </div>

@@ -1,9 +1,11 @@
 <!-- компонент FloatingCart.vue -->
 <script setup>
 import { useCartStore } from "@/store/cart";
+import { useAppStore } from "@/store/app-store";
 import { computed } from "vue";
 
 const cartStore = useCartStore();
+const appStore = useAppStore();
 
 const props = defineProps({
   activeProduct: Object, // Конкретный товар из окна описания
@@ -32,8 +34,10 @@ const displayPrice = computed(() => {
 });
 
 const handleClick = () => {
-  emit("open-cart"); // Сигнал родителю (закрыть окно описания)
-  cartStore.toggleCart(true); // Открыть большую корзину
+  if (props.isStatic) {  // Если мы в модалке товара — закрываем её и открываем корзину
+    emit("open-cart"); // Сигнал родителю (закрыть окно описания)
+  } 
+    cartStore.toggleCart(true); 
 };
 
 const getPlural = (count) => {

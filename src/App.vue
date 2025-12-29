@@ -3,6 +3,7 @@ import Header from "./components/Header.vue";
 import Footer from "./components/Footer.vue";
 import Modal from "./components/Modal.vue";
 import FloatingCart from "./components/FloatingCart.vue";
+import AuthModal from "./components/AuthModal.vue";
 
 import { useAppStore } from "./store/app-store";
 import { useCartStore } from "./store/cart";
@@ -19,11 +20,13 @@ const cartStore = useCartStore();
     <main class="main">
       <router-view></router-view>
     </main>
-
+    
     <FloatingCart @open-cart="isCartOpen = true"/>
 
     <Modal :isOpen="cartStore.isCartOpen" @toggleCart="cartStore.toggleCart" />
     <!-- передаем в модальное окно данные из store - при клике на иконку крестика или overlay передаем методу значение false -->
+    
+    <AuthModal />
     <Footer />
   </div>
 </template>

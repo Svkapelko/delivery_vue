@@ -26,7 +26,7 @@ import { defineStore } from 'pinia';
 export const useAppStore = defineStore('app', {
   state: () => ({
     // Состояние окон
-    isAuthOpen: false,
+    isAuthOpen: false, // Флаг для модалки авторизации
     
     // Глобальный статус
     isLoading: false,
@@ -44,5 +44,11 @@ export const useAppStore = defineStore('app', {
   getters: {
     
   },
+
+  actions: {
+    toggleAuthModal(value){
+      this.isAuthOpen = value;
+    }
+  }
 });
 
