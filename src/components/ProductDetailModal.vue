@@ -44,12 +44,12 @@ const getUrl = (name) => {
             <h2 class="product-detail-title">
               {{ product.title }}
             </h2>
-            <p class="products-detail-description">
+            <p class="product-detail-description">
               {{ product.title }}
             </p>
 
             <div class="product-detail-specs">
-              <p class="products-detail-description">
+              <p class="product-detail-description">
                 <strong>Состав:</strong>
                 {{
                   product.info || "Классический рецепт из свежих ингредиентов"
@@ -82,26 +82,24 @@ const getUrl = (name) => {
             </div>
 
             <!-- УПРАВЛЕНИЕ КОЛИЧЕСТВОМ (над футером) -->
-            <div v-if="currentQuantity > 0" class="quantity-controls-wrap">
-              <div class="quantity-controls">
-                <button
-                  class="btn btn-outline"
-                  @click="cartStore.decreaseQuantity(product)"
-                >
-                  -
-                </button>
-                <span class="quantity-number">{{ currentQuantity }}</span>
-                <button
-                  class="btn btn-outline"
-                  @click="cartStore.increaseQuantity(product)"
-                >
-                  +
-                </button>
-              </div>
+            <div v-if="currentQuantity > 0" class="quantity-controls">
+              <button
+                class="btn btn-outline"
+                @click="cartStore.decreaseQuantity(product)"
+              >
+                -
+              </button>
+              <span class="quantity-number">{{ currentQuantity }}</span>
+              <button
+                class="btn btn-outline"
+                @click="cartStore.increaseQuantity(product)"
+              >
+                +
+              </button>
             </div>
 
             <div class="product-detail-footer">
-             <!-- Состояние 1: Товара НЕТ в корзине -->
+              <!-- Состояние 1: Товара НЕТ в корзине -->
               <template v-if="currentQuantity === 0">
                 <p class="product-detail-price">{{ product.price }} ₽</p>
                 <button
@@ -139,7 +137,9 @@ const getUrl = (name) => {
   justify-content: center;
   align-items: center;
   z-index: 3000; /* гарантирует, что окно будет поверх хедера (у которого обычно 100-1000) и поверх плавающей кнопки корзины на главной. */
-  backdrop-filter: blur(4px); /* современный эффект матового стекла. Размывает всё, что находится ПОД оверлеем*/
+  backdrop-filter: blur(
+    4px
+  ); /* современный эффект матового стекла. Размывает всё, что находится ПОД оверлеем*/
 }
 .product-detail-content {
   background: white;
@@ -206,17 +206,10 @@ const getUrl = (name) => {
   font-weight: 700;
 }
 
-.quantity-controls-wrap {
-  display: flex;
-  justify-content: flex-end;
-  margin-bottom: 10px;
-}
-
 .product-detail-footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-top: 20px;
   min-height: 60px; /* Чтобы высота не прыгала при смене кнопок */
 }
 .product-detail-price {
@@ -227,6 +220,7 @@ const getUrl = (name) => {
   display: flex;
   align-items: center;
   gap: 10px;
+  margin-top: 20px;
 }
 .quantity-number {
   font-weight: bold;

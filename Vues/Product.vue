@@ -53,11 +53,11 @@ const addItemToCart = (product) => {
                   {{ product.title }}
                 </h5>
               </div>
-              <div class="products-card_description--row">
-             <!--   <p class="products-card_description--text">
+        <!-- <div class="products-card_description--row">
+               <p class="products-card_description--text">
                   {{ product.info }}
-                </p> -->
-              </div>
+                </p> 
+              </div> -->
               <div class="products-card_description--row">
                 <div class="products-card_description-controls">
                   <!-- Если товара нет в корзине — показываем кнопку -->

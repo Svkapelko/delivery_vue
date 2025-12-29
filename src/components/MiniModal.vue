@@ -7,35 +7,35 @@ const cartStore = useCartStore();
 
 const props = defineProps({
   activeProduct: Object,
-})
+});
 
 // Используем геттер из стора для получения количества этого товара в корзине
-const currentQuantity = computed(() => cartStore.getItemQuantity(props.activeProduct));
-
+const currentQuantity = computed(() =>
+  cartStore.getItemQuantity(props.activeProduct)
+);
 </script>
 
 <template>
-  <!-- Компонент исчезнет сам, как только currentQuantity станет 0 -->
-  <div 
-    v-if="currentQuantity > 0"
-    class="cart-modal-mini"
-  >
-    <div class="cart-item__controls--quantity">
-      <button
-        class="btn btn-outline btn-cart-modal-mini"
-        @click.stop="cartStore.decreaseQuantity(props.activeProduct)"
-      >
-       -
-      </button>   
-      <span class="cart-item__controls--count">{{ currentQuantity }}</span>
-      <button
-        class="btn btn-outline btn-cart-modal-mini"
-        @click.stop="cartStore.increaseQuantity(props.activeProduct)"
-      >
-        +
-      </button>     
+  <transition name="fade">
+    <!-- Компонент исчезнет сам, как только currentQuantity станет 0 -->
+    <div v-if="currentQuantity > 0" class="cart-modal-mini">
+      <div class="cart-item__controls--quantity">
+        <button
+          class="btn btn-outline btn-cart-modal-mini"
+          @click.stop="cartStore.decreaseQuantity(props.activeProduct)"
+        >
+          -
+        </button>
+        <span class="cart-item__controls--count">{{ currentQuantity }}</span>
+        <button
+          class="btn btn-outline btn-cart-modal-mini"
+          @click.stop="cartStore.increaseQuantity(props.activeProduct)"
+        >
+          +
+        </button>
+      </div>
     </div>
-  </div>
+  </transition>
 </template>
 
 
@@ -48,14 +48,14 @@ const currentQuantity = computed(() => cartStore.getItemQuantity(props.activePro
   border: none;
   outline: none;
   background-color: #f9f9f9;
-  border-radius:20px; 
+  border-radius: 20px;
   width: 100%;
 }
 .cart-item__controls--quantity {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  /*margin-bottom: 10px;*/
+  margin: 7px 0px 7px 0px;
 }
 
 .mini-modal.open {
@@ -76,5 +76,14 @@ const currentQuantity = computed(() => cartStore.getItemQuantity(props.activePro
   padding: 4px 8px 4px 8px;
   margin-left: 10px;
   margin-right: 10px;
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
 }
 </style>

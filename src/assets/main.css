@@ -123,10 +123,11 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
+     margin-bottom: 10px;
 }
-.products-card_description--row:not(:last-child ){
+/*.products-card_description--row:not(:last-child ){
     margin-bottom: 10px;
-}
+}*/
 
 /* медиа-запросы внизу */ 
 @media (max-width: 991px){ /* при изменении ширины экрана до 991px меняем ширину текста - растягиваем по всему баннеру*/
