@@ -53,11 +53,6 @@ const addItemToCart = (product) => {
                   {{ product.title }}
                 </h5>
               </div>
-        <!-- <div class="products-card_description--row">
-               <p class="products-card_description--text">
-                  {{ product.info }}
-                </p> 
-              </div> -->
               <div class="products-card_description--row">
                 <div class="products-card_description-controls">
                   <!-- Если товара нет в корзине — показываем кнопку -->
@@ -101,6 +96,10 @@ const addItemToCart = (product) => {
 <style scoped>
 .products-card {
   position: relative;
+     /* 1. ДОБАВЛЯЕМ: Плавный переход для всех изменений */
+    transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+    border: 1px solid transparent; /* Заготовка под рамку */
+    cursor: pointer;
 }
 
 .products-card_description--name {
@@ -131,4 +130,5 @@ const addItemToCart = (product) => {
   font-weight: 700;
   line-height: 32px;
 }
+
 </style>

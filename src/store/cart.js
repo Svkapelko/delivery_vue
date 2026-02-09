@@ -1,13 +1,25 @@
 //store/cart.js
 import { defineStore } from "pinia";
+import { useAppStore } from "./app-store";
 
 export const useCartStore = defineStore("cart", {
-  state: () => ({
-    items: [],
-    showMessage: false, // Флаг отображения сообщения
-    messageText: "", // Текущее сообщение
-    isCartOpen: false, // «корзина» - то самое «модальное окно», кт открывается из хедера.
-  }),
+  state: () => {
+     // 1. Сначала выполняем логику (нужны фигурные скобки {})
+     // ВАЖНО: Вызываем useAppStore() ПРЯМО ТУТ, внутри функции
+    const appStore = useAppStore();
+    const storageKey = appStore.user ? `orders_${appStore.user.phone}` : 'guest';
+    const savedOrders = JSON.parse(localStorage.getItem(storageKey)) || [];// Загружаем историю из памяти
+    
+    // 2. Затем возвращаем объект состояния через return
+    return {
+      items: [],
+      orders: savedOrders,
+      lastOrderId: null,// переменная для хранения номера последнего заказа
+      showMessage: false, // Флаг отображения сообщения
+      messageText: "", // Текущее сообщение
+      isCartOpen: false, // «корзина» - то самое «модальное окно», кт открывается из хедера.
+    }
+  },
 
   /*  геттеры (без аргументов, кэшируются) Геттеры автоматически «подписываются» на изменения state.items. Как только массив изменится, все кнопки на странице мгновенно переключатся*/
   getters: {
@@ -111,5 +123,93 @@ export const useCartStore = defineStore("cart", {
         this.messageText = "";
       }, 3000);
     },
+
+    // Этот метод вызовем сразу после успешной авторизации
+     loadUserHistory() {
+      // 1. Сначала инициализируем стор
+      const appStore = useAppStore(); 
+      // 2. Теперь проверяем телефон
+      if (appStore.user?.phone) {
+        const storageKey = `orders_${appStore.user.phone}`;
+        this.orders = JSON.parse(localStorage.getItem(storageKey)) || [];
+        console.log(`История загружена для ключа: ${storageKey}`);
+      } else {
+        // 3. Если телефона нет (юзер не вошел), обнуляем массив
+        this.orders = [];
+      }
+     },
+
+    // В сторе корзины создается действие, кт отправляет данные о товарах и токене пользователя на сервер.
+    async createOrder() {
+      try {
+        const appStore = useAppStore();
+
+        // Проверка: если токена нет, заказ создать нельзя (защита)
+        if (!appStore.token) throw new Error("Пользователь не авторизован.");
+
+         // 1. Формируем расширенный объект данных для сервера
+         const orderBody = {
+          items: this.items,
+          totalPrice: this.totalPrice,
+          // Добавляем данные из профиля пользователя
+          customer: {
+            name: appStore.user?.name || 'Имя не указано',
+            lastname: appStore.user?.lastname || 'Фамилия не указана',
+            phone: appStore.user?.phone,
+            address: appStore.user?.address || 'Адрес не указан',
+            email: appStore.user?.email || 'Email не указан'
+          },
+         createdAt: new Date().toISOString() // Хорошая практика — добавлять дату
+        };
+
+        const response = await fetch('https://jsonplaceholder.typicode.com/posts', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${appStore.token}`
+          },
+          // Отправляем обновленный объект
+          body: JSON.stringify(orderBody)
+        });
+
+        if (!response.ok) throw new Error("Сервер вернул ошибку");
+
+        // ПИШЕМ ЛОГИКУ СОХРАНЕНИЯ В ИСТОРИЮ
+        // 1. Генерируем номер заказа - вернее ,имитируем (например, #5521), тк JSONPlaceholder его не пришлет
+        const fakeOrderId = Math.floor(Math.random() * 10000) + 100;
+
+        // 2. Формируем объект для истории (берем данные, пока корзина не пуста)
+        const newOrder = {
+          id: fakeOrderId,
+          date: new Date().toLocaleString('ru-RU'),
+          totalPrice: this.totalPrice,
+          items: [...this.items] /* Обязательно делаем копию массива через [... ] - Если просто написать items: this.items, то при очистке корзины данные могут исчезнуть и из истории (из-за особенностей ссылок в JS).*/
+        }
+
+        // ИСПРАВЛЕНИЕ: Проверяем, существует ли массив. Если нет — создаем его.
+        if (!this.orders) {
+          this.orders = [];
+        }
+        // 3. Сохраняем в массив заказов (в начало списка)
+        this.orders.unshift(newOrder); /* добавляем заказ в начало массива, чтобы в профиле пользователь видел самый свежий заказ первым.*/ 
+
+        // 4. Синхронизируем с LocalStorage - УНИКАЛЬНЫЙ КЛЮЧ: привязываем сохранение к телефону пользователя
+        const storageKey = `orders_${appStore.user?.phone || 'guest'}`;
+        localStorage.setItem(storageKey, JSON.stringify(this.orders));
+
+        // КОНЕЦ ЛОГИКИ ИСТОРИИ 
+
+        // Теперь можно очищать корзину
+        this.items = [];
+
+        const data = await response.json();
+        this.lastOrderId = fakeOrderId;
+
+        return {success: true, orderId: data.id || fakeOrderId};
+      } catch (e) {
+        console.error("Ошибка оформления заказа:", e);
+        return {success: false};
+      }
+    }
   },
 });

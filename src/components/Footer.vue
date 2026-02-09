@@ -11,16 +11,24 @@
                 </router-link>
                 <div class="footer-nav">
                     <ul>
-                        <li>Ресторанам </li>
-                        <li>Курьерам</li>
-                        <li>Пресс-центр</li>
-                        <li>Контакты</li>
+                        <!-- Используем router-link для страниц внутри сайта -->
+                        <li><router-link to="/for-restaurants">Ресторанам</router-link></li>
+                        <li><router-link to="/for-couriers">Курьерам</router-link></li>
+                        <li><router-link to="/press">Пресс-центр</router-link></li>
+                        <li><router-link to="/contacts">Контакты</router-link></li>
                     </ul>
                 </div>
                 <div class="footer-social">
-                    <img src="../assets/images/social/inst.png" alt="INST">
-                    <img src="../assets/images/social/fb.png" alt="FB">
-                    <img src="../assets/images/social/vk.png" alt="VK">
+                    <!-- target="_blank" открывает в новой вкладке, rel="noopener" для безопасности -->
+                    <a href="http://instagram.com" target="_blank" rel="noopener noreferrer">
+                        <img src="../assets/images/social/inst.png" alt="INST">
+                    </a>
+                    <a href="http://facebook.com" target="_blank" rel="noopener noreferrer">
+                        <img src="../assets/images/social/fb.png" alt="FB">
+                    </a>
+                    <a href="http://vk.com" target="_blank" rel="noopener noreferrer">
+                        <img src="../assets/images/social/vk.png" alt="VK">
+                    </a>
                 </div>
             </div>
         </div>
@@ -56,19 +64,31 @@
     padding: 0;
     gap: 15px;
     flex-wrap: wrap;
+    list-style: none;
 }
 
-.footer-nav ul li {
+.footer-nav a {
+    text-decoration: none;
+    transition: color 0.2s ease;
     color:rgba(89, 89, 89, 1);
     font-size: 18px;
     font-weight: 400;
 }
-
+.footer-nav a:hover {
+    color:#1890ff;
+}
 .footer-social {
     display: flex;
     align-items: center;
     justify-content: flex-end;
     gap: 20px;
+}
+.footer-social a {
+    transition: transform 0.2s ease, opacity 0.2x ease;
+}
+.footer-social a:hover {
+    transform: scale(1.1); /* Легкое увеличение иконок */
+    opacity: 0.8;
 }
 
 </style>

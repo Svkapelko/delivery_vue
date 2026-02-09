@@ -21,12 +21,28 @@ const cancelAndClearCart = () => {
   }
 };
 
-const handleCheckout = () => {
-  // 1. Проверяем, пуста ли корзина
-  if (cartStore.isCartEmpty) return; 
-  // 2. Здесь в будущем будет проверка из authStore.isLoggedIn
-  // А пока просто вызываем окно авторизации
-  appStore.toggleAuthModal(true);
+const handleCheckout = async() => {
+  /* 1. Проверяем, пуста ли корзина if (cartStore.isCartEmpty) return; */
+   // 1. Если токен уже есть в сторе (пользователь вошел через хедер ранее)
+   if (appStore.token) {
+    appStore.setLoading(true);
+
+    // Закрываем корзину и сразу создаем заказ
+    cartStore.toggleCart(false);
+    const orderResult = await cartStore.createOrder();
+
+    appStore.setLoading(false);
+    // Если заказ не удался (техническая ошибка)
+    if (!orderResult.success) {
+      alert("Ошибка при оформлении заказа. Попробуйте еще раз.")
+    }
+    // Если успех — OrderSuccessModal откроется сам через стор
+    return; // Выходим из функции, модалка авторизации не откроется
+   }
+
+  // 2. Если токена нет — открываем авторизацию
+  cartStore.toggleCart(false); // Сначала закрываем корзину, чтобы она не висела на фоне
+  appStore.toggleAuthModal(true); // Открываем модалку входа
 }
 
 
@@ -124,9 +140,10 @@ onUnmounted(() => {
           <h2 class="cart-modal__header--title">Корзина</h2>
         </slot>
         
-        <span class="cart-modal__header--close" @click.stop="cartStore.toggleCart(false)">
+   <!-- <span class="cart-modal__header--close" @click.stop="cartStore.toggleCart(false)">
           <img src="../assets/images/icons/close.svg" alt="close" />
-        </span>
+        </span> -->
+        <button @click.stop="cartStore.toggleCart(false)" class="close-btn" aria-label="Закрыть">&times;</button>
       </div>
 
       <!-- Блок для отображения сообщений -->
@@ -166,8 +183,8 @@ onUnmounted(() => {
       <div class="cart-modal__footer">
         <div class="cart-modal__footer--price">{{ cartStore.totalPrice }} ₽</div>
         <div class="cart-modal__footer--controls">
-          <button @click.stop="handleCheckout" class="btn btn-primary">Оформить заказ</button>
-          <button class="btn btn-outline" @click="cancelAndClearCart">Очистить корзину</button>
+          <button @click.stop="handleCheckout" class="btn btn-primary btn-checkout">Оформить заказ</button>
+          <button class="btn btn-outline btn-clear-cart" @click="cancelAndClearCart">Очистить корзину</button>
         </div>
       </div>
     </div>
@@ -336,5 +353,46 @@ onUnmounted(() => {
   min-width: 18px;   /* И НИКОГДА не меньше этого */
   height: auto;      /* Сохраняет пропорции */
   min-height: 20px;  /* Минимальная высота */
+}
+
+.btn-clear-cart {
+  background: transparent;
+  color: #8c8c8c;
+  border: 1px solid #d9d9d9;
+  transition: all 0.3s ease;
+}
+
+.btn-clear-cart:hover {
+  /*background-color: #ff4d4f !important;*/
+  /*background-color: rgba(255, 77, 79, 0.5);*/
+  transform: translateY(-2px);
+  color: #ff4d4f !important;
+  /*color: white !important;*/
+  border-color: #ff4d4f !important;
+  box-shadow: 0 4px 10px rgba(255, 77, 79, 0.3);
+}
+.btn-clear-cart:active{
+  background: rgba(255, 77, 79, 0.1);
+  transform: scale(0.98);/* Сжатие при клике */
+}
+
+.btn-checkout {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-checkout:hover {
+  transform: translateY(-2px); /* Приподнимается */
+  box-shadow: 0 8px 20px rgba(24, 144, 255, 0.35); /* "Теневое свечение" */
+}
+.btn-checkout:active {
+  transform: translateY(0) scale(0.98); /* Сжимается при клике */
+  background: #096dd9; /* Темнеет */
+  box-shadow:0 4px 10px rgba(24, 144, 255, 0.2);
+}
+.btn-checkout:disabled {
+  background: #d9d9d9;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 </style>

@@ -1,14 +1,16 @@
 <!-- components/AuthModal.vue -->
 <script setup>
 import { useAppStore } from "@/store/app-store";
+import { useCartStore } from "@/store/cart";
 import { ref } from "vue";
 import { watch } from "vue";
 
 const appStore = useAppStore();
-
+const cartStore = useCartStore();
+ 
 const phoneNumber = ref("");
 const smsCode = ref("");
-const step = ref(1); // 1 - ввод телефона, 2 - ввод кода из СМС
+
 
 /* Чтобы курсор всегда оказывался в конце (после +7 или введенных цифр) и пользователь не мог случайно начать писать перед плюсом, нужно использовать метод setSelectionRange. */
 const moveCursorToEnd = (e) => {
@@ -71,7 +73,7 @@ const handlePhoneInput = (e) => {
     result; /* Мы напрямую говорим браузеру: «Забудь, что ввел пользователь, и напиши в поле вот эту строку». Это мгновенно удаляет 11-ю, 12-ю и все последующие цифры.*/
 
   // Обновляем реактивную переменную Vue
-  phoneNumber.value = result;
+  phoneNumber.value = result; /* phoneNumber.value = digits */
 
   // Передвигаем курсор в конец после обновления значения
   moveCursorToEnd(e);
@@ -95,40 +97,101 @@ const handleSmsInput = (e) => {
   smsCode.value = cleanValue;
 };
 
-const handleAuth = () => {
-  // Считаем только цифры, чтобы не зависеть от пробелов и плюса
-  const digitsOnly = phoneNumber.value.replace(/\D/g, "").length;
+const handleAuth = async () => {
 
-  if (step.value === 1) {
-    // Проверка для первого шага (ввод телефона)
-    if (digitsOnly === 11) {
-      step.value = 2; // Переходим к вводу кода
+   // 1. Если пользователь уже авторизован (токен есть), н-р при обновлении страницы
+  if (appStore.token && appStore.authStep === 1) {
+    if (cartStore.items.length > 0 && !cartStore.isCartEmpty) {
+      appStore.setLoading(true);
+      appStore.toggleAuthModal(false); // Закрываем окно, так как входить не нужно
+
+      // Вызываем создание заказа (ID запишется в cartStore.lastOrderId)
+      const orderResult = await cartStore.createOrder();
+      appStore.setLoading(false);
+
     } else {
-      alert("Введите корректный номер телефона");
+      // Если просто нажали войти, будучи авторизованным
+      appStore.toggleAuthModal(false);
     }
-  } else if (step.value === 2) {
-    // Проверка для второго шага (ввод СМС-кода)
-    const isOnlyDigits = /^\d+$/.test(
-      smsCode.value
-    ); /*.test(...) — это встроенная функция JavaScript. Она берет шаблон (регулярку) и применяет его к строке в скобках.*/
-    if (smsCode.value.length === 4 && isOnlyDigits) {
-      // Здесь будет логика авторизации через Store
-      console.log("Авторизация успешна.");
-      appStore.toggleAuthModal(false); // Закрываем окно
-    } else {
-      alert("Код должен состоять из 4 цифр.");
-    }
+    return;
   }
+
+  // Очищаем номер от лишних символов - получаем СТРОКУ из цифр (номер телефона)
+  const digitsOnly = phoneNumber.value.replace(/\D/g, "");
+
+   // --- ШАГ 1: ТЕЛЕФОН ---
+  if (appStore.authStep === 1) {
+    if (digitsOnly.length !== 11) return alert("Введите корректный номер телефона.");
+    
+    appStore.setLoading(true);
+    const success = await appStore.sendSmsCode(digitsOnly);
+    appStore.setLoading(false);
+
+    if (success) appStore.authStep = 2; // Переходим к вводу кода
+      else alert("Не удалось отправить смс. Попробуйте позже.");
+      return; // Выходим из функции, чтобы не идти в step 2
+    }
+ 
+    // Шаг 2: СМС
+    if (appStore.authStep === 2) {
+     // 1. Сначала проверяем формат (БЕЗ включения спиннера)
+      const isOnlyDigits = /^\d+$/.test(smsCode.value); /*.test(...) — это встроенная функция JavaScript. Она берет шаблон (регулярку) и применяет его к строке в скобках.*/
+       // Проверка ввода БЕЗ включения спиннера (чтобы не зависало)
+      if (smsCode.value.length !== 4 || !isOnlyDigits) {
+        return alert("Код должен состоять из 4 цифр.");
+      }
+
+      try {
+        // 2. Включаем спиннер только когда начинаем реальные запросы
+        appStore.setLoading(true); // Включаем спиннер только здесь
+
+        // Ждем авторизацию
+        const isOk = await appStore.verifyCode(digitsOnly, smsCode.value);
+      
+        if (!isOk){
+          // Здесь setLoading(false) сработает автоматически в finally ниже
+          return alert("Ошибка: неверный код.")
+        }
+        
+        // Если вход успешен - СНАЧАЛА подгружаем  профиль (имя, адрес)
+       appStore.loadUserProfile(digitsOnly);
+        
+        // Подгружаем историю заказов
+        cartStore.loadUserHistory(); 
+
+        appStore.toggleAuthModal(false); // ЗАТЕМ закрываем модалку и оформляем заказ
+       
+        // 3. ПРОВЕРКА: Нужно ли оформлять заказ?
+        if (cartStore.items.length > 0 && !cartStore.isCartEmpty) {
+          // Оформляем заказ ТОЛЬКО если корзина не пуста
+          const orderResult = await cartStore.createOrder();
+          // Если случилась ошибка сервера — сообщаем об этом
+          if (!orderResult.success) {
+            alert("Ошибка при оформлении заказа. Проверьте корзину.");
+          } /* Если успех, OrderSuccessModal откроется сам! Если корзина пуста, Пользователь увидит,что он вошел, тк в Хедере кнопка "Войти" заменится на "Рады Вас видеть, .." */
+        }       
+      } catch (error) {
+          console.error(error);
+          alert("Произошла непредвиденная ошибка.");
+        } finally {
+          appStore.setLoading(false); // ГАРАНТИРОВАННО выключаем спиннер
+        }
+      }
+    };
+
+const changeNumber = () => {
+  appStore.authStep = 1;
+  smsCode.value = ""; // Очищаем вручную, так как watch тут не сработает
 };
 
 /* Следим за состоянием открытия модального окна в сторе,  Мы следим за свойством isAuthOpen в store,newValue — это новое состояние окна (стало открыто или стало закрыто) */
 watch(
   () => appStore.isAuthOpen,
-  (newValue) => {
-    if (newValue === true) {
+  (isOpen) => { 
+    if (isOpen) {
       phoneNumber.value = "";
       smsCode.value = "";
-      step.value = 1;
+      appStore.authStep = 1;
     }
   }
 );
@@ -148,10 +211,10 @@ watch(
         </button>
 
         <div class="auth-header">
-          <h2>{{ step === 1 ? "Вход на сайт" : "Подтверждение" }}</h2>
+          <h2>{{ appStore.authStep === 1 ? "Вход на сайт" : "Подтверждение" }}</h2>
           <p>
             {{
-              step === 1
+              appStore.authStep === 1
                 ? "Введите свой номер телефона для входа"
                 : "Мы отправили смс-код на " + phoneNumber
             }}
@@ -161,11 +224,11 @@ watch(
         <!-- по умолчанию (без .prevent): когда форма отправляется, браузер пытается перезагрузить страницу и отправить данные по адресу, указанному в атрибуте action, но мы хотим обработать данные не обновляя страницу, с помощью функции, кт мы написали -->
         <form @submit.prevent="handleAuth" class="auth-form">
           <!-- Шаг 1: Телефон -->
-          <div v-if="step === 1" class="input-group">
+          <div v-if="appStore.authStep === 1" class="input-group">
             <input
               :value="phoneNumber"
               @input="handlePhoneInput"
-              @focus="preparePhone"
+              @focus="preparePhone($event)"
               type="tel"
               pattern="\+7 \d{10}"
               placeholder="+7 999 111 11 11"
@@ -176,7 +239,7 @@ watch(
           <!-- Мы разделили v-model. Теперь значение в поле синхронизируется через :value, а функция handlePhoneInput обрабатывает каждый ввод, прежде чем обновить переменную. -->
 
           <!-- Шаг 2: Код из СМС -->
-          <div v-if="step === 2" class="input-group">
+          <div v-if="appStore.authStep === 2" class="input-group">
             <input
               :value="smsCode"
               @input="handleSmsInput"
@@ -189,19 +252,31 @@ watch(
             />
           </div>
 
-          <button type="submit" class="btn btn-primary auth-submit">
-            {{ step === 1 ? "Получить смс-код" : "Войти" }}
+          <button 
+            type="submit" 
+            :disabled="appStore.isLoading"
+            class="btn btn-primary auth-submit">
+
+             <!-- Если загрузка идет — показываем текст или спиннер -->
+             <template v-if="appStore.isLoading">
+              <span>Загрузка...</span>
+             </template>
+
+              <!-- Если загрузки нет — обычный текст шага -->
+              <template v-else>                 
+                {{ appStore.authStep === 1 ? "Получить смс-код" : "Войти" }} 
+              </template>
           </button>
         </form>
 
-        <p v-if="step === 1" class="auth-footer">
+        <p v-if="appStore.authStep === 1" class="auth-footer">
           Продолжая, Вы соглашаетесь с условиями пользования
         </p>
 
         <!-- одинарное равенство используется потому, что это не сравнение, а присваивание(=)
                 Когда вы пишете @click="step = 1", вы даете команду: «Возьми переменную step и запиши в неё число 1» Это происходит в момент клика. Это меняет состояние приложения (вы перекидываете пользователя с шага ввода кода обратно на шаг ввода телефона).
                 Когда вы пишете v-if="step === 1", вы задаете вопрос: «Правда ли, что сейчас step равен 1?» Это происходит постоянно (Vue следит за условием). Это ничего не меняет в данных, а просто проверяет их текущее состояние, чтобы решить — показывать блок или нет.-->
-        <button v-else @click="step = 1" class="btn-link">
+        <button v-else @click="changeNumber" class="btn-link">
           Изменить номер
         </button>
       </div>

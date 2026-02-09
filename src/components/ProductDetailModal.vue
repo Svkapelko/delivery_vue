@@ -125,7 +125,7 @@ const getUrl = (name) => {
   </transition>
 </template>
 
-<style scope>
+<style scoped>
 .product-detail-overlay {
   position: fixed;
   top: 0;
@@ -151,7 +151,7 @@ const getUrl = (name) => {
   animation: slideUp 0.3s ease-out; /* при открытии окно не просто появится, а плавно "подпрыгнет" снизу вверх. */
 }
 
-.close-btn {
+/*.close-btn {
   position: absolute;
   top: 15px;
   right: 15px;
@@ -161,7 +161,7 @@ const getUrl = (name) => {
   font-size: 28px;
   cursor: pointer;
   color: #aaa;
-}
+}*/
 
 .product-detail-grid {
   display: grid;

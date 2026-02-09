@@ -1,16 +1,29 @@
 <script setup>
-import { useAppStore } from "../src/store/app-store";
-import { useRestStore } from "@/store/rests";
+  import { ref, computed } from "vue";
+  import { useAppStore } from "../src/store/app-store";
+  import { useRestStore } from "@/store/rests";
 
-const appStore = useAppStore();
-const restStore = useRestStore();
+  const appStore = useAppStore();
+  const restStore = useRestStore();
 
-// Получаем массив ресторанов
-const rests = restStore.rests;
+  // Локальная переменная для строки поиска
+  const searchQuery = ref("");
 
-const getUrl = (name) => {
-  return new URL(`../src/assets/images/rests/${name}`, import.meta.url);
-};
+  // Вычисляемый массив: фильтруем данные ПРЯМО из стора
+  const filteredRests = computed(()=> {
+    const query = searchQuery.value.toLowerCase().trim(); /* приводим и то, что ввел пользователь, и то, что написано в названии ресторана, к нижнему регистру, а тж удялем пробелы*/
+
+    if (!query) return restStore.rests; // Обращаемся напрямую к стору, чтобы не ввводить лишних переменных
+
+    return restStore.rests.filter(rest => 
+      rest.title.toLowerCase().includes(query) ||
+      rest.type.toLowerCase().includes(query)
+    );
+  })
+
+  const getUrl = (name) => {
+    return new URL(`../src/assets/images/rests/${name}`, import.meta.url);
+  };
 /* Метод getUrl(name) предназначен для формирования корректного абсолютного пути к изображению/др ресурсу в проекте. Метод возвращает объект типа URL, содержащий абсолютный путь к файлу. Эта конструкция полезна, потому что new URL() формирует правильный URL, учитывающий расположение текущего модуля (import.meta.url).
     Механизм работы:
 - Сначала создается относительная ссылка на файл (../src/assets/images/goods/${name}).
@@ -40,15 +53,29 @@ const getUrl = (name) => {
       <div class="container">
         <div class="products-header">
           <h3 class="products-header--title">Рестораны</h3>
-          <input
-            type="text"
-            placeholder="Поиск блюд и ресторанов"
-            class="products-header--search"
+          <div class="search-container">
+             <input
+              v-model="searchQuery"
+              type="text"
+              placeholder="Поиск блюд и ресторанов"
+              class="products-header--search"
           />
+             <!-- Иконка лупы -->
+             <img src="/src/assets/images/icons/search.png" class="search-icon">
+
+          <!-- Кнопка очистки: появляется только если searchQuery не пустой -->
+            <span 
+              v-if="searchQuery"
+              @click="searchQuery = ''"
+              class="search-clear">
+                &times;
+            </span>
+          </div>
         </div>
         <div class="products-wrapper" id="rests-container">
+           <!-- 2. Перебираем ОТФИЛЬТРОВАННЫЙ массив -->
           <router-link
-            v-for="rest in rests"
+            v-for="rest in filteredRests"
             :key="rest.id"
             :to="`/rest?id=${rest.id}`"
             class="products-card"
@@ -82,6 +109,10 @@ const getUrl = (name) => {
             </div>
           </router-link>
         </div>
+        <!-- Сообщение, если ничего не найдено -->
+        <div v-if="filteredRests.length === 0" class="search-empty">
+          По запросу {{ searchQuery }} ничего не найдено.
+        </div>
       </div>
     </section>
   </main>
@@ -101,6 +132,10 @@ const getUrl = (name) => {
   font-weight: 700;
   margin: 0;
 }
+.search-container {
+  position: relative; /* Позволяет позиционировать крестик относительно этого блока */
+  display: inline-block; /* Чтобы контейнер не растягивался на всю ширину, если не нужно */
+}
 .products-header--search {
   box-sizing: border-box;
   border: 1px solid rgba(217, 217, 217, 1);
@@ -109,11 +144,11 @@ const getUrl = (name) => {
   min-width: 306px;
   height: 34px;
   flex-shrink: 0;
-  padding: 5px 12px;
+  padding: 5px 30px 5px 40px; /* Добавила 30px справа для крестика и слева для икноки лупы */
 }
 .products-header--search:focus {
   outline: none;
-  border: 1px solid rgba(217, 217, 217, 1);
+  border: 1px solid #1890ff;;
 }
 .products-header--search::placeholder {
   color: rgba(191, 191, 191, 1);
@@ -121,6 +156,31 @@ const getUrl = (name) => {
   font-weight: 400;
   line-height: 24px;
 }
+.search-icon {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 14px;
+  left: 10px;
+  cursor: default; /* Лупа — просто картинка */
+}
+.search-clear {
+  position: absolute;
+  right: 10px;
+  top: 50%; /* Центрирование по вертикали */
+  transform: translateY(-50%);  /* Точная корректировка центра */
+
+  cursor: pointer;
+  font-size: 20px;  /* Размер крестика */
+  color: rgba(191, 191, 191, 1); /* Цвет как у плейсхолдера */
+  line-height: 1; /* Символ крестика &times; по умолчанию может иметь лишние отступы сверху или снизу (из-за особенностей шрифта). Установка line-height: 1 убирает эти «пустоты», позволяя центрировать крестик по вертикали идеально ровно. Без этого крестик может казаться чуть смещенным вверх или вниз. */
+  transition: color 0.2s ease; /* Плавный переход - анимируем только цвет текста, время анимации,тип ускорения (плавное начало и плавный конец). С transition цвет крестика перетечет из серого в темный мягко и плавно. */
+  user-select: none; /* Запрет выделения - тк крестик — это текстовый символ, при быстром или двойном клике (если пользователь хочет быстро стереть и снова набрать текст) браузер может случайно «выделить» его синим цветом. Это выглядит некрасиво. user-select: none делает так, чтобы крестик вел себя как картинка или иконка, а не как текст. */
+}
+.search-clear:hover{
+  color: #ff4d4f; 
+}
+
 .products-card_description--title {
   color: rgba(0, 0, 0, 1);
   font-size: 24px;
@@ -175,4 +235,5 @@ const getUrl = (name) => {
   top: 14px;
   left: -14px;
 }
+
 </style>
